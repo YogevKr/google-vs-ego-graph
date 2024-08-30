@@ -128,14 +128,17 @@ def visualize_graph(G):
     node_trace.marker.size = node_sizes
     node_trace.text = node_texts
 
+    # Determine text color based on Streamlit theme
+    text_color = '#000000' if st.get_option('theme.base') == 'light' else '#FFFFFF'
+
     # Create a separate trace for the text labels
     text_trace = go.Scatter(
         x=[pos[node][0] for node in G.nodes()],
-        y=[pos[node][1] + 0.03 for node in G.nodes()],  # Offset y position slightly
+        y=[pos[node][1] + 0.07 for node in G.nodes()],  # Increased offset for y position
         mode='text',
         text=list(G.nodes()),
         textposition='bottom center',
-        textfont=dict(size=14),
+        textfont=dict(color=text_color, size=14),
         hoverinfo='none'
     )
 
