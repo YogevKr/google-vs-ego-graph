@@ -115,8 +115,7 @@ def visualize_graph(G):
             line=dict(width=2, color=edge_color),
             hoverinfo='text',
             mode='lines',
-            text=f"{edge[0]} vs {edge[1]}",
-            hovertemplate=f"<b>Connection:</b> %{{text}}<br><b>Weight:</b> {weight:.2f}<br><b>Normalized Weight:</b> {normalized_weight:.2f}<extra></extra>",
+            text=f"Weight: {weight}",
         )
         edge_traces.append(edge_trace)
 
@@ -184,11 +183,6 @@ def visualize_graph(G):
     fig.update_layout(
         height=800,
         width=1000,
-        hoverlabel=dict(
-            bgcolor="white",
-            font_size=12,
-            font_family="Rockwell"
-        )
     )
 
     return fig
