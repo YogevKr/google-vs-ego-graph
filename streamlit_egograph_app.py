@@ -86,48 +86,20 @@ def create_egograph(query, target_nodes=40, max_depth=5):
     status_text.text(f"Concept map created with {len(G.nodes())} concepts and {len(G.edges())} connections")
     return G
 
-def get_theme():
-    # Inject custom CSS and JavaScript to detect the theme
-    st.markdown("""
-        <style>
-            /* Hide the injected element */
-            #theme-detector { 
-                display: none;
-            }
-        </style>
-        <div id="theme-detector"></div>
-        <script>
-            // Function to detect theme
-            function detectTheme() {
-                const themeDetector = document.getElementById('theme-detector');
-                const computedStyle = window.getComputedStyle(themeDetector);
-                const backgroundColor = computedStyle.backgroundColor;
-                const isDark = backgroundColor === 'rgb(20, 20, 20)'; // Dark theme background color
-                document.body.classList.add(isDark ? 'dark-theme' : 'light-theme');
-            }
+# Initialize session state for theme
+if 'dark_theme' not in st.session_state:
+    st.session_state.dark_theme = False
 
-            // Run theme detection on load and on DOM changes
-            detectTheme();
-            new MutationObserver(detectTheme).observe(document.body, {childList: true, subtree: true});
-        </script>
-    """, unsafe_allow_html=True)
+# Add this at the beginning of your main() function or where you start building your UI
+def theme_toggle():
+    st.session_state.dark_theme = not st.session_state.dark_theme
 
-    # Check if the body has the 'dark-theme' class
-    is_dark_theme = st.markdown("""
-        <script>
-            if (document.body.classList.contains('dark-theme')) {
-                document.write('True');
-            } else {
-                document.write('False');
-            }
-        </script>
-    """, unsafe_allow_html=True)
-
-    return is_dark_theme
+# Add a toggle button for theme
+st.button("Toggle Theme", on_click=theme_toggle)
 
 def visualize_graph(G):
-    # Detect theme using the new function
-    is_dark_theme = get_theme()
+    # Use the session state to determine the theme
+    is_dark_theme = st.session_state.dark_theme
     st.write(f"Is dark theme: {is_dark_theme}")
     
     text_color = 'white' if is_dark_theme else 'black'
@@ -215,10 +187,12 @@ def visualize_graph(G):
                         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
                     )
 
+    # Set the background color based on the theme
+    bg_color = 'rgba(0,0,0,0)' if is_dark_theme else 'white'
     fig.update_layout(
         height=700,
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor=bg_color,
+        paper_bgcolor=bg_color,
     )
 
     return fig
