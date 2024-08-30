@@ -28,22 +28,34 @@ def fallback_suggestions(query):
 
 def clean_suggestions(suggestions, original_term, previous_terms):
     cleaned = []
+    original_term_parts = set(original_term.lower().split())
     for s in suggestions:
         terms = s.lower().split()
         if 'vs' in terms:
             vs_index = terms.index('vs')
             if vs_index + 1 < len(terms):
-                term = ' '.join(terms[vs_index + 1:])
-                if term not in previous_terms and term != original_term.lower():
-                    cleaned.append(term)
+                potential_term = ' '.join(terms[vs_index + 1:])
+                potential_term_parts = set(potential_term.split())
+                
+                # Check if the term contains multiple 'vs'
+                if terms.count('vs') > 1:
+                    continue
+                
+                # Check if the term contains the original search term
+                if not original_term_parts.issubset(potential_term_parts):
+                    # Check if the term contains any previously accepted terms
+                    if not any(prev_term in potential_term for prev_term in previous_terms):
+                        cleaned.append(potential_term)
+
     return cleaned[:5]  # Return top 5 suggestions
 
 @st.cache_data
 def create_egograph(query, target_nodes=50, max_depth=6):
     G = nx.Graph()
-    G.add_node(query, size=40, color='#FFA500', level=0)  # Orange for root node
+    G.add_node(query, size=40, level=0)  # Root node
 
-    colors = ['#4CAF50', '#2196F3', '#9C27B0', '#FF5722', '#795548']  # Green, Blue, Purple, Deep Orange, Brown
+    colors = ['#FFA500', '#4CAF50', '#2196F3', '#9C27B0', '#FF5722', '#795548']  # Orange, Green, Blue, Purple, Deep Orange, Brown
+
     explored_terms = set([query])
     terms_to_explore = [(query, 0)]
 
@@ -60,15 +72,11 @@ def create_egograph(query, target_nodes=50, max_depth=6):
         suggestions = get_google_suggestions(f"{current_term} vs")
         cleaned_suggestions = clean_suggestions(suggestions, current_term, explored_terms)
 
-        for i, suggestion in enumerate(cleaned_suggestions):
+        for suggestion in cleaned_suggestions:
             if suggestion not in explored_terms and len(G.nodes()) < target_nodes:
-                color = random.choice(colors)
-                G.add_node(suggestion, size=30, color=color, level=current_level + 1)
-                weight = 5 - i  # Weight based on suggestion order
-                if G.has_edge(current_term, suggestion):
-                    G[current_term][suggestion]['weight'] += weight
-                else:
-                    G.add_edge(current_term, suggestion, weight=weight)
+                G.add_node(suggestion, size=30, level=current_level + 1)
+                weight = 5  # All edges now have the same weight
+                G.add_edge(current_term, suggestion, weight=weight)
                 explored_terms.add(suggestion)
                 terms_to_explore.append((suggestion, current_level + 1))
 
@@ -77,11 +85,23 @@ def create_egograph(query, target_nodes=50, max_depth=6):
 
         sleep(0.1)  # Rate limiting
 
-    # Calculate node sizes based on edge count
-    for node in G.nodes():
-        edge_count = G.degree(node)
+    # Calculate node sizes and assign colors based on edge count
+    edge_counts = dict(G.degree())
+    sorted_nodes = sorted(edge_counts, key=edge_counts.get, reverse=True)
+    color_assignments = {}
+    
+    for i, node in enumerate(sorted_nodes):
+        color_index = min(i, len(colors) - 1)  # Ensure we don't go out of bounds
+        color_assignments[node] = colors[color_index]
+        
+        edge_count = edge_counts[node]
         size = 30 + (edge_count * 2)  # Base size of 30, increase by 2 for each edge
+        
         G.nodes[node]['size'] = size
+        G.nodes[node]['color'] = color_assignments[node]
+
+    # Ensure root node is always orange
+    G.nodes[query]['color'] = colors[0]
 
     status_text.text(f"Concept map created with {len(G.nodes())} concepts and {len(G.edges())} connections")
     return G
