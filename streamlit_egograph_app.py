@@ -10,16 +10,6 @@ import xml.etree.ElementTree as ET
 # Set page config at the very beginning
 st.set_page_config(page_title="Google VS Explorer", layout="wide", initial_sidebar_state="collapsed")
 
-# Force dark mode using CSS
-st.markdown("""
-    <style>
-    .stApp {
-        background-color: #0E1117;
-        color: white;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 def get_google_suggestions(query):
     url = f'http://suggestqueries.google.com/complete/search?&output=toolbar&gl=us&hl=en&q={urllib.parse.quote(query)}'
     try:
@@ -162,7 +152,6 @@ def visualize_graph(G):
         height=700,
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        # Force dark mode
         template='plotly_dark',
     )
 
