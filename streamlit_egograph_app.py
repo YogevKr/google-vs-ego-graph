@@ -93,8 +93,13 @@ def get_streamlit_theme_colors():
     return background_color, text_color
 
 def visualize_graph(G):
-    bg_color, _ = get_streamlit_theme_colors()
-    plot_text_color = 'black'
+    bg_color, text_color = get_streamlit_theme_colors()
+    
+    # Determine if we're in dark mode
+    is_dark_mode = bg_color.lower() in ['#0e1117', '#000000', 'black']
+    
+    # Set plot text color based on background
+    plot_text_color = 'white' if is_dark_mode else 'black'
     
     pos = nx.spring_layout(G, k=1.0, iterations=50)
 
@@ -110,12 +115,13 @@ def visualize_graph(G):
         
         normalized_weight = 0.3 + 0.7 * (weight - min_weight) / (max_weight - min_weight)
         
-        color = f'rgba(100, 100, 100, {normalized_weight})'
+        # Adjust edge color based on dark/light mode
+        edge_color = f'rgba(200, 200, 200, {normalized_weight})' if is_dark_mode else f'rgba(100, 100, 100, {normalized_weight})'
         
         edge_trace = go.Scatter(
             x=[x0, x1, None],
             y=[y0, y1, None],
-            line=dict(width=2, color=color),
+            line=dict(width=2, color=edge_color),
             hoverinfo='text',
             mode='lines',
             text=f"Weight: {weight}",
@@ -155,18 +161,16 @@ def visualize_graph(G):
     node_trace.marker.size = node_sizes
     node_trace.text = node_texts
 
-    # Adjust the text position to be closer to the nodes
     text_trace = go.Scatter(
         x=[pos[node][0] for node in G.nodes()],
-        y=[pos[node][1] + 0.05 for node in G.nodes()],  # Reduced y-offset from 0.1 to 0.05
+        y=[pos[node][1] + 0.05 for node in G.nodes()],
         mode='text',
         text=list(G.nodes()),
         textposition='top center',
-        textfont=dict(color=plot_text_color, size=12),  # Reduced font size from 14 to 12
+        textfont=dict(color=plot_text_color, size=12),
         hoverinfo='none'
     )
 
-    # Combine all traces
     data = edge_traces + [node_trace, text_trace]
 
     fig = go.Figure(data=data,
