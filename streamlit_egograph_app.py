@@ -86,6 +86,15 @@ def create_egograph(query, target_nodes=40, max_depth=5):
     status_text.text(f"Concept map created with {len(G.nodes())} concepts and {len(G.edges())} connections")
     return G
 
+import streamlit as st
+import networkx as nx
+import plotly.graph_objects as go
+import requests
+import urllib.parse
+from time import sleep
+import random
+import xml.etree.ElementTree as ET
+
 def get_streamlit_theme_colors():
     # Get Streamlit's current theme colors
     background_color = st.get_option("theme.backgroundColor")
@@ -94,10 +103,13 @@ def get_streamlit_theme_colors():
 
 def visualize_graph(G):
     # Get Streamlit's theme colors
-    bg_color, text_color = get_streamlit_theme_colors()
+    bg_color, _ = get_streamlit_theme_colors()
+    
+    # Always use black for text in the plot
+    plot_text_color = 'black'
     
     st.write(f"Background color: {bg_color}")
-    st.write(f"Text color: {text_color}")
+    st.write(f"Plot text color: {plot_text_color}")
 
     pos = nx.spring_layout(G, k=0.5, iterations=50)
 
@@ -114,7 +126,7 @@ def visualize_graph(G):
 
     edge_trace = go.Scatter(
         x=edge_x, y=edge_y,
-        line=dict(width=1, color=text_color),
+        line=dict(width=1, color='#888'),  # Use a neutral color for edges
         hoverinfo='text',
         mode='lines',
         text=[f"Weight: {w}" for w in edge_weights],
@@ -161,7 +173,7 @@ def visualize_graph(G):
         mode='text',
         text=list(G.nodes()),
         textposition='bottom center',
-        textfont=dict(color=text_color, size=14),
+        textfont=dict(color=plot_text_color, size=14),
         hoverinfo='none'
     )
 
@@ -185,7 +197,7 @@ def visualize_graph(G):
         height=700,
         plot_bgcolor=bg_color,
         paper_bgcolor=bg_color,
-        font_color=text_color,
+        font_color=plot_text_color,  # Use black for all text in the plot
     )
 
     return fig
