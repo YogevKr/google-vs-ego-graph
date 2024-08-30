@@ -87,13 +87,19 @@ def create_egograph(query, target_nodes=50, max_depth=6):
 
     # Calculate node sizes and assign colors based on edge count
     edge_counts = dict(G.degree())
-    sorted_nodes = sorted(edge_counts, key=edge_counts.get, reverse=True)
-    color_assignments = {}
+    unique_edge_counts = set(edge_counts.values())
     
-    for i, node in enumerate(sorted_nodes):
-        color_index = min(i, len(colors) - 1)  # Ensure we don't go out of bounds
-        color_assignments[node] = colors[color_index]
-        
+    if len(unique_edge_counts) == 1:
+        # If all nodes have the same degree, assign colors randomly
+        color_assignments = {node: random.choice(colors) for node in G.nodes()}
+    else:
+        sorted_nodes = sorted(edge_counts, key=edge_counts.get, reverse=True)
+        color_assignments = {}
+        for i, node in enumerate(sorted_nodes):
+            color_index = min(i, len(colors) - 1)  # Ensure we don't go out of bounds
+            color_assignments[node] = colors[color_index]
+    
+    for node in G.nodes():
         edge_count = edge_counts[node]
         size = 30 + (edge_count * 2)  # Base size of 30, increase by 2 for each edge
         
@@ -105,6 +111,101 @@ def create_egograph(query, target_nodes=50, max_depth=6):
 
     status_text.text(f"Concept map created with {len(G.nodes())} concepts and {len(G.edges())} connections")
     return G
+
+def visualize_graph(G):
+    pos = nx.spring_layout(G, k=1.0, iterations=50)
+
+    edge_traces = []
+    edge_weights = [G.edges[edge]['weight'] for edge in G.edges()]
+    min_weight = min(edge_weights)
+    max_weight = max(edge_weights)
+
+    for edge in G.edges(data=True):
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        weight = edge[2]['weight']
+
+        # Handle case where all weights are the same
+        if min_weight == max_weight:
+            normalized_weight = 5  # Use a default middle value
+        else:
+            normalized_weight = 1 + 9 * (weight - min_weight) / (max_weight - min_weight)  # Scale from 1 to 10
+
+        edge_trace = go.Scatter(
+            x=[x0, x1, None],
+            y=[y0, y1, None],
+            line=dict(width=normalized_weight, color='rgba(200, 200, 200, 0.7)'),
+            hoverinfo='text',
+            mode='lines',
+            text=f"Weight: {weight}",
+        )
+        edge_traces.append(edge_trace)
+
+    node_x = []
+    node_y = []
+    for node in G.nodes():
+        x, y = pos[node]
+        node_x.append(x)
+        node_y.append(y)
+
+    node_trace = go.Scatter(
+        x=node_x, y=node_y,
+        mode='markers',
+        hoverinfo='text',
+        marker=dict(
+            showscale=False,
+            color=[],
+            size=[],
+            line_width=2))
+
+    node_adjacencies = []
+    node_texts = []
+    node_sizes = []
+    node_colors = []
+    for node in G.nodes(data=True):
+        node_adjacencies.append(G.degree(node[0]))
+        node_texts.append(f'{node[0]}<br># of connections: {G.degree(node[0])}')
+        node_sizes.append(node[1]['size'])
+        node_colors.append(node[1]['color'])
+
+    node_trace.marker.color = node_colors
+    node_trace.marker.size = node_sizes
+    node_trace.text = node_texts
+
+    text_trace = go.Scatter(
+        x=[pos[node][0] for node in G.nodes()],
+        y=[pos[node][1] + 0.05 for node in G.nodes()],
+        mode='text',
+        text=list(G.nodes()),
+        textposition='top center',
+        textfont=dict(size=12),
+        hoverinfo='none'
+    )
+
+    data = edge_traces + [node_trace, text_trace]
+
+    fig = go.Figure(data=data,
+                    layout=go.Layout(
+                        title='<br>Concept Map',
+                        titlefont_size=16,
+                        showlegend=False,
+                        hovermode='closest',
+                        margin=dict(b=20,l=5,r=5,t=40),
+                        annotations=[ dict(
+                            text="",
+                            showarrow=False,
+                            xref="paper", yref="paper",
+                            x=0.005, y=-0.002 ) ],
+                        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                        dragmode='pan'))
+
+    fig.update_layout(
+        height=800,
+        width=1000,
+    )
+
+    return fig
     
 def get_streamlit_theme_colors():
     try:
