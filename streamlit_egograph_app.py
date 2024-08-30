@@ -93,18 +93,6 @@ def get_streamlit_theme_colors():
         return None, None
 
 def visualize_graph(G):
-    bg_color, text_color = get_streamlit_theme_colors()
-
-    # Fallback to a default light theme if we can't get the colors
-    if not bg_color or not text_color:
-        bg_color = '#ffffff'  # white
-        text_color = '#000000'  # black
-
-    # Determine if we're in dark mode
-    r, g, b = tuple(int(bg_color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
-    luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-    is_dark_mode = luminance < 0.5
-
     pos = nx.spring_layout(G, k=1.0, iterations=50)
 
     edge_traces = []
@@ -119,8 +107,7 @@ def visualize_graph(G):
         
         normalized_weight = 0.3 + 0.7 * (weight - min_weight) / (max_weight - min_weight)
         
-        # Adjust edge color based on dark/light mode
-        edge_color = f'rgba(200, 200, 200, {normalized_weight})' if is_dark_mode else f'rgba(100, 100, 100, {normalized_weight})'
+        edge_color = f'rgba(100, 100, 100, {normalized_weight})'
         
         edge_trace = go.Scatter(
             x=[x0, x1, None],
@@ -171,7 +158,7 @@ def visualize_graph(G):
         mode='text',
         text=list(G.nodes()),
         textposition='top center',
-        textfont=dict(color=text_color, size=12),
+        textfont=dict(size=12),
         hoverinfo='none'
     )
 
@@ -196,18 +183,6 @@ def visualize_graph(G):
     fig.update_layout(
         height=800,
         width=1000,
-        plot_bgcolor=bg_color,
-        paper_bgcolor=bg_color,
-        font_color=text_color,
-    )
-
-    fig.update_layout(
-        modebar=dict(
-            activecolor='#1f77b4',
-            bgcolor=bg_color,
-            color=text_color,
-            orientation='v'
-        )
     )
 
     return fig
