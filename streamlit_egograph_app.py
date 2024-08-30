@@ -139,7 +139,7 @@ def visualize_graph(G):
     node_trace.textposition = 'top center'
 
     # Determine text color based on Streamlit theme
-    text_color = 'black' if st.get_option('theme.base') == 'light' else 'white'
+    text_color = 'white' if st.get_option('theme.base') == 'light' else 'black'
 
     fig = go.Figure(data=[edge_trace, node_trace],
                     layout=go.Layout(
@@ -157,10 +157,9 @@ def visualize_graph(G):
                         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
                     )
     
-    # Set consistent text color and add background
-    fig.update_traces(textfont=dict(color=text_color, size=10),
+    # Set consistent text color and increase font size
+    fig.update_traces(textfont=dict(color=text_color, size=14),
                       textfont_family="Arial",
-                      textfont_weight="bold",
                       selector=dict(type='scatter', mode='markers+text'))
     
     fig.update_layout(
@@ -168,21 +167,6 @@ def visualize_graph(G):
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
     )
-
-    # Add semi-transparent background to text for better visibility
-    for i, node in enumerate(G.nodes()):
-        fig.add_annotation(
-            x=node_trace.x[i],
-            y=node_trace.y[i],
-            text=node,
-            showarrow=False,
-            font=dict(color=text_color, size=10),
-            bgcolor='rgba(255, 255, 255, 0.5)' if text_color == 'black' else 'rgba(0, 0, 0, 0.5)',
-            bordercolor='rgba(0, 0, 0, 0)',
-            borderwidth=1,
-            borderpad=2,
-            opacity=0.8
-        )
 
     return fig
 
