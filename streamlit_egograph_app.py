@@ -44,7 +44,7 @@ def create_egograph(query, target_nodes=40, max_depth=5):
     explored_terms = set([query])
     terms_to_explore = [(query, 0)]
     
-    with st.expander("Graph Creation Process", expanded=False):
+    with st.expander("Concept Map Creation Process", expanded=False):
         progress_bar = st.progress(0)
         status_text = st.empty()
     
@@ -53,7 +53,7 @@ def create_egograph(query, target_nodes=40, max_depth=5):
         if current_level >= max_depth:
             continue
         
-        status_text.text(f"Exploring term: {current_term} (Level: {current_level}, Total Nodes: {len(G.nodes())})")
+        status_text.text(f"Exploring concept: {current_term} (Level: {current_level}, Total Concepts: {len(G.nodes())})")
         suggestions = get_google_suggestions(f"{current_term} vs")
         cleaned_suggestions = clean_suggestions(suggestions, current_term, explored_terms)
         
@@ -72,7 +72,7 @@ def create_egograph(query, target_nodes=40, max_depth=5):
         
         sleep(0.1)  # Rate limiting
     
-    status_text.text(f"Graph created with {len(G.nodes())} nodes and {len(G.edges())} edges")
+    status_text.text(f"Concept map created with {len(G.nodes())} concepts and {len(G.edges())} connections")
     return G
 
 def visualize_graph(G):
@@ -128,7 +128,7 @@ def visualize_graph(G):
 
     fig = go.Figure(data=[edge_trace, node_trace],
                     layout=go.Layout(
-                        title='<br>Ego Graph',
+                        title='<br>Concept Map',
                         titlefont_size=16,
                         showlegend=False,
                         hovermode='closest',
@@ -145,32 +145,39 @@ def visualize_graph(G):
     return fig
 
 def main():
-    st.set_page_config(page_title="Ego Graph Generator", layout="wide")
+    st.set_page_config(page_title="Google VS Explorer", layout="wide")
     
-    st.title("Ego Graph Generator")
+    st.title("Google VS Explorer")
+    
+    st.markdown("""
+    Explore related concepts using Google's "vs" search suggestions.
+    
+    **Acknowledgment**: Inspired by David Foster's article 
+    [The Google 'vs' Trick](https://medium.com/applied-data-science/the-google-vs-trick-618c8fd5359f).
+    """)
     
     col1, col2 = st.columns([3, 1])
     
     with col2:
-        st.subheader("Input Parameters")
-        search_term = st.text_input("Enter the search term:")
-        generate_button = st.button("Generate Ego Graph")
+        st.subheader("Start Exploring")
+        search_term = st.text_input("Enter a concept:")
+        generate_button = st.button("Explore Related Concepts")
     
     with col1:
         if generate_button:
             if search_term:
-                with st.spinner("Generating Ego Graph..."):
+                with st.spinner("Generating concept map..."):
                     try:
                         G = create_egograph(search_term)
                         fig = visualize_graph(G)
                         st.plotly_chart(fig, use_container_width=True)
-                        st.success(f"Graph generated with {len(G.nodes())} nodes and {len(G.edges())} edges.")
-                        st.info("You can drag to pan, scroll to zoom, and hover over nodes to see details.")
+                        st.success(f"Map generated with {len(G.nodes())} concepts and {len(G.edges())} connections.")
+                        st.info("Interact with the map: drag to move, scroll to zoom, hover for details.")
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
-                        st.error("Please try again with a different search term.")
+                        st.error("Please try again with a different concept.")
             else:
-                st.warning("Please enter a search term.")
+                st.warning("Please enter a concept to explore.")
 
 if __name__ == "__main__":
     main()
