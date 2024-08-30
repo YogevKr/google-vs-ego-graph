@@ -93,10 +93,7 @@ def get_streamlit_theme_colors():
     return background_color, text_color
 
 def visualize_graph(G):
-    # Get Streamlit's theme colors
     bg_color, _ = get_streamlit_theme_colors()
-
-    # Always use black for text in the plot
     plot_text_color = 'black'
     pos = nx.spring_layout(G, k=0.5, iterations=50)
 
@@ -109,25 +106,22 @@ def visualize_graph(G):
         edge_x.extend([x0, x1, None])
         edge_y.extend([y0, y1, None])
         weight = edge[2]['weight']
-        edge_weights.extend([weight, weight, None])
+        edge_weights.append(weight)
 
-    # Calculate the range of weights
-    min_weight = min(weight for weight in edge_weights if weight is not None)
-    max_weight = max(weight for weight in edge_weights if weight is not None)
-    
-    # Normalize weights to a range between 1 and 10 for line thickness
-    normalized_weights = [
-        1 + 9 * (w - min_weight) / (max_weight - min_weight) if w is not None else None 
-        for w in edge_weights
-    ]
+    # Normalize weights to a range between 0 and 1 for color intensity
+    min_weight = min(edge_weights)
+    max_weight = max(edge_weights)
+    normalized_weights = [(w - min_weight) / (max_weight - min_weight) for w in edge_weights]
+
+    edge_colors = [f'rgba(136, 136, 136, {w})' for w in normalized_weights]
 
     edge_trace = go.Scatter(
         x=edge_x, y=edge_y,
-        line=dict(width=normalized_weights, color='#888'),  # Use normalized weights for line width
+        line=dict(width=2, color=edge_colors),  # Use a fixed width and vary the color intensity
         hoverinfo='text',
         mode='lines',
-        text=[f"Weight: {w}" if w is not None else "" for w in edge_weights],
-        opacity=0.7
+        text=[f"Weight: {w}" for w in edge_weights],
+        opacity=1  # Set to 1 as we're using color for opacity
     )
 
     node_x = []
@@ -163,10 +157,9 @@ def visualize_graph(G):
     node_trace.marker.size = node_sizes
     node_trace.text = node_texts
 
-    # Create a separate trace for the text labels
     text_trace = go.Scatter(
         x=[pos[node][0] for node in G.nodes()],
-        y=[pos[node][1] + 0.1 for node in G.nodes()],  # Adjusted offset for y position
+        y=[pos[node][1] + 0.1 for node in G.nodes()],
         mode='text',
         text=list(G.nodes()),
         textposition='bottom center',
@@ -188,19 +181,18 @@ def visualize_graph(G):
                             x=0.005, y=-0.002 ) ],
                         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                        dragmode='pan'))  # Set pan as the default drag mode
+                        dragmode='pan'))
 
     fig.update_layout(
         height=700,
         plot_bgcolor=bg_color,
         paper_bgcolor=bg_color,
-        font_color=plot_text_color,  # Use black for all text in the plot
+        font_color=plot_text_color,
     )
 
-    # Update the modebar to have pan selected by default
     fig.update_layout(
         modebar=dict(
-            activecolor='#1f77b4',  # Color of the active button
+            activecolor='#1f77b4',
             bgcolor=bg_color,
             color=plot_text_color,
             orientation='v'
