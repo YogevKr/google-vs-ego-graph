@@ -168,10 +168,18 @@ def visualize_graph(G):
 
     return fig
 
-# Modify the main function to force dark mode in Streamlit
 def main():
-    # Force dark mode
-    st.set_page_config(page_title="Google VS Explorer", layout="wide", initial_sidebar_state="collapsed", theme="dark")
+    st.set_page_config(page_title="Google VS Explorer", layout="wide", initial_sidebar_state="collapsed")
+    
+    # Force dark mode using CSS
+    st.markdown("""
+        <style>
+        .stApp {
+            background-color: #0E1117;
+            color: white;
+        }
+        </style>
+    """, unsafe_allow_html=True)
     
     st.title("Google VS Explorer")
     
@@ -204,6 +212,9 @@ def main():
                         st.error("Please try again with a different concept.")
             else:
                 st.warning("Please enter a concept to explore.")
+
+if __name__ == "__main__":
+    main()
 
 if __name__ == "__main__":
     main()
