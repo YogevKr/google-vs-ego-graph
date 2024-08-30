@@ -109,19 +109,14 @@ def visualize_graph(G):
         
         edge_color = f'rgba(100, 100, 100, {normalized_weight})'
         
-        # Create a detailed tooltip for the edge
-        tooltip = (f"Connection: {edge[0]} vs {edge[1]}<br>"
-                   f"Weight: {weight:.2f}<br>"
-                   f"Normalized Weight: {normalized_weight:.2f}")
-        
         edge_trace = go.Scatter(
             x=[x0, x1, None],
             y=[y0, y1, None],
             line=dict(width=2, color=edge_color),
             hoverinfo='text',
             mode='lines',
-            text=tooltip,
-            name='',  # This ensures the trace name doesn't appear in the tooltip
+            text=f"{edge[0]} vs {edge[1]}",
+            hovertemplate=f"<b>Connection:</b> %{{text}}<br><b>Weight:</b> {weight:.2f}<br><b>Normalized Weight:</b> {normalized_weight:.2f}<extra></extra>",
         )
         edge_traces.append(edge_trace)
 
