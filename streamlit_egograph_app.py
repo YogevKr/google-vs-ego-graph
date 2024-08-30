@@ -41,9 +41,10 @@ def clean_suggestions(suggestions, original_term, previous_terms):
 @st.cache_data
 def create_egograph(query, target_nodes=50, max_depth=6):
     G = nx.Graph()
-    G.add_node(query, size=40, color='#FFA500', level=0)  # Orange for root node
+    G.add_node(query, size=40, level=0)  # Root node
 
-    colors = ['#4CAF50', '#2196F3', '#9C27B0', '#FF5722', '#795548']  # Green, Blue, Purple, Deep Orange, Brown
+    colors = ['#FFA500', '#4CAF50', '#2196F3', '#9C27B0', '#FF5722', '#795548']  # Orange, Green, Blue, Purple, Deep Orange, Brown
+
     explored_terms = set([query])
     terms_to_explore = [(query, 0)]
 
@@ -62,8 +63,7 @@ def create_egograph(query, target_nodes=50, max_depth=6):
 
         for i, suggestion in enumerate(cleaned_suggestions):
             if suggestion not in explored_terms and len(G.nodes()) < target_nodes:
-                color = random.choice(colors)
-                G.add_node(suggestion, size=30, color=color, level=current_level + 1)
+                G.add_node(suggestion, size=30, level=current_level + 1)
                 weight = 5 - i  # Weight based on suggestion order
                 if G.has_edge(current_term, suggestion):
                     G[current_term][suggestion]['weight'] += weight
@@ -77,20 +77,26 @@ def create_egograph(query, target_nodes=50, max_depth=6):
 
         sleep(0.1)  # Rate limiting
 
-    # Calculate node sizes based on edge count
-    for node in G.nodes():
-        edge_count = G.degree(node)
+    # Calculate node sizes and assign colors based on edge count
+    edge_counts = dict(G.degree())
+    sorted_nodes = sorted(edge_counts, key=edge_counts.get, reverse=True)
+    color_assignments = {}
+    
+    for i, node in enumerate(sorted_nodes):
+        color_index = min(i, len(colors) - 1)  # Ensure we don't go out of bounds
+        color_assignments[node] = colors[color_index]
+        
+        edge_count = edge_counts[node]
         size = 30 + (edge_count * 2)  # Base size of 30, increase by 2 for each edge
+        
         G.nodes[node]['size'] = size
+        G.nodes[node]['color'] = color_assignments[node]
+
+    # Ensure root node is always orange
+    G.nodes[query]['color'] = colors[0]
 
     status_text.text(f"Concept map created with {len(G.nodes())} concepts and {len(G.edges())} connections")
     return G
-    
-def get_streamlit_theme_colors():
-    try:
-        return st.get_option("theme.backgroundColor"), st.get_option("theme.textColor")
-    except:
-        return None, None
 
 def visualize_graph(G):
     pos = nx.spring_layout(G, k=1.0, iterations=50)
@@ -105,20 +111,18 @@ def visualize_graph(G):
         x1, y1 = pos[edge[1]]
         weight = edge[2]['weight']
 
-        # Normalize the weight to determine line thickness
         normalized_weight = 1 + 9 * (weight - min_weight) / (max_weight - min_weight)  # Scale from 1 to 10
 
         edge_trace = go.Scatter(
             x=[x0, x1, None],
             y=[y0, y1, None],
-            line=dict(width=normalized_weight, color='rgba(200, 200, 200, 0.7)'),  # Fixed opacity, variable width
+            line=dict(width=normalized_weight, color='rgba(200, 200, 200, 0.7)'),
             hoverinfo='text',
             mode='lines',
             text=f"Weight: {weight}",
         )
         edge_traces.append(edge_trace)
 
-    # Rest of the function remains the same
     node_x = []
     node_y = []
     for node in G.nodes():
@@ -132,8 +136,6 @@ def visualize_graph(G):
         hoverinfo='text',
         marker=dict(
             showscale=False,
-            colorscale='YlGnBu',
-            reversescale=True,
             color=[],
             size=[],
             line_width=2))
