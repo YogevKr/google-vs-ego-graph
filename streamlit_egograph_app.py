@@ -6,7 +6,6 @@ import urllib.parse
 from time import sleep
 import random
 import xml.etree.ElementTree as ET
-from fa2 import ForceAtlas2
 
 def get_google_suggestions(query):
     url = f'http://suggestqueries.google.com/complete/search?&output=toolbar&gl=us&hl=en&q={urllib.parse.quote(query)}'
@@ -77,28 +76,13 @@ def create_egograph(query, target_nodes=40, max_depth=5):
     return G
 
 def visualize_graph(G):
-    forceatlas2 = ForceAtlas2(
-        outboundAttractionDistribution=True,
-        linLogMode=False,
-        adjustSizes=False,
-        edgeWeightInfluence=1.0,
-        jitterTolerance=1.0,
-        barnesHutOptimize=True,
-        barnesHutTheta=1.2,
-        multiThreaded=False,
-        scalingRatio=2.0,
-        strongGravityMode=False,
-        gravity=1.0,
-        verbose=False
-    )
-
-    positions = forceatlas2.forceatlas2_networkx_layout(G, pos=None, iterations=50)
+    pos = nx.spring_layout(G, k=0.5, iterations=50)
 
     edge_x = []
     edge_y = []
     for edge in G.edges():
-        x0, y0 = positions[edge[0]]
-        x1, y1 = positions[edge[1]]
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
         edge_x.extend([x0, x1, None])
         edge_y.extend([y0, y1, None])
 
@@ -111,7 +95,7 @@ def visualize_graph(G):
     node_x = []
     node_y = []
     for node in G.nodes():
-        x, y = positions[node]
+        x, y = pos[node]
         node_x.append(x)
         node_y.append(y)
 
@@ -144,7 +128,7 @@ def visualize_graph(G):
 
     fig = go.Figure(data=[edge_trace, node_trace],
                     layout=go.Layout(
-                        title='<br>Force-Directed Ego Graph',
+                        title='<br>Ego Graph',
                         titlefont_size=16,
                         showlegend=False,
                         hovermode='closest',
@@ -161,9 +145,9 @@ def visualize_graph(G):
     return fig
 
 def main():
-    st.set_page_config(page_title="Force-Directed Ego Graph Generator", layout="wide")
+    st.set_page_config(page_title="Ego Graph Generator", layout="wide")
     
-    st.title("Force-Directed Ego Graph Generator")
+    st.title("Ego Graph Generator")
     
     col1, col2 = st.columns([3, 1])
     
