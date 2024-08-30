@@ -42,39 +42,47 @@ def clean_suggestions(suggestions, original_term, previous_terms):
 def create_egograph(query, target_nodes=40, max_depth=5):
     G = nx.Graph()
     G.add_node(query, size=40, color='#FFA500', level=0)  # Orange for root node
-    
+
     colors = ['#4CAF50', '#2196F3', '#9C27B0', '#FF5722', '#795548']  # Green, Blue, Purple, Deep Orange, Brown
     explored_terms = set([query])
     terms_to_explore = [(query, 0)]
-    
+
     with st.expander("Concept Map Creation Process", expanded=False):
         progress_bar = st.progress(0)
         status_text = st.empty()
-    
+
     while terms_to_explore and len(G.nodes()) < target_nodes:
         current_term, current_level = terms_to_explore.pop(0)
         if current_level >= max_depth:
             continue
-        
+
         status_text.text(f"Exploring concept: {current_term} (Level: {current_level}, Total Concepts: {len(G.nodes())})")
         suggestions = get_google_suggestions(f"{current_term} vs")
         cleaned_suggestions = clean_suggestions(suggestions, current_term, explored_terms)
-        
+
         for i, suggestion in enumerate(cleaned_suggestions):
             if suggestion not in explored_terms and len(G.nodes()) < target_nodes:
                 color = random.choice(colors)
-                size = 35 if current_level == 1 else 30
-                G.add_node(suggestion, size=size, color=color, level=current_level + 1)
+                G.add_node(suggestion, size=30, color=color, level=current_level + 1)
                 weight = 5 - i  # Weight based on suggestion order
-                G.add_edge(current_term, suggestion, weight=weight)
+                if G.has_edge(current_term, suggestion):
+                    G[current_term][suggestion]['weight'] += weight
+                else:
+                    G.add_edge(current_term, suggestion, weight=weight)
                 explored_terms.add(suggestion)
                 terms_to_explore.append((suggestion, current_level + 1))
-        
+
         progress = min(len(G.nodes()) / target_nodes, 1.0)
         progress_bar.progress(progress)
-        
+
         sleep(0.1)  # Rate limiting
-    
+
+    # Calculate node sizes based on incoming edge count
+    for node in G.nodes():
+        incoming_edges = G.in_edges(node)
+        size = 30 + (len(incoming_edges) * 2)  # Base size of 30, increase by 2 for each incoming edge
+        G.nodes[node]['size'] = size
+
     status_text.text(f"Concept map created with {len(G.nodes())} concepts and {len(G.edges())} connections")
     return G
 
@@ -83,17 +91,23 @@ def visualize_graph(G):
 
     edge_x = []
     edge_y = []
-    for edge in G.edges():
+    edge_weights = []
+    for edge in G.edges(data=True):
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
         edge_x.extend([x0, x1, None])
         edge_y.extend([y0, y1, None])
+        weight = edge[2]['weight']
+        edge_weights.append(weight)
 
     edge_trace = go.Scatter(
         x=edge_x, y=edge_y,
-        line=dict(width=0.5, color='#888'),
-        hoverinfo='none',
-        mode='lines')
+        line=dict(width=1, color='#888'),
+        hoverinfo='text',
+        mode='lines',
+        text=[f"Weight: {w}" for w in edge_weights],
+        opacity=0.7
+    )
 
     node_x = []
     node_y = []
@@ -118,11 +132,11 @@ def visualize_graph(G):
     node_texts = []
     node_sizes = []
     node_colors = []
-    for node, adjacencies in enumerate(G.adjacency()):
-        node_adjacencies.append(len(adjacencies[1]))
-        node_texts.append(f'{adjacencies[0]}<br># of connections: {len(adjacencies[1])}')
-        node_sizes.append(G.nodes[adjacencies[0]]['size'])
-        node_colors.append(G.nodes[adjacencies[0]]['color'])
+    for node in G.nodes(data=True):
+        node_adjacencies.append(len(list(G.neighbors(node[0]))))
+        node_texts.append(f'{node[0]}<br># of connections: {len(list(G.neighbors(node[0])))}')
+        node_sizes.append(node[1]['size'])
+        node_colors.append(node[1]['color'])
 
     node_trace.marker.color = node_colors
     node_trace.marker.size = node_sizes
@@ -165,7 +179,7 @@ def visualize_graph(G):
     )
 
     return fig
-
+    
 def submit_text():
     st.session_state['submitted_text'] = st.session_state.text_input
 
