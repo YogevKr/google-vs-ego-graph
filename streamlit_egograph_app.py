@@ -142,8 +142,8 @@ def visualize_graph(G):
     node_trace.marker.size = node_sizes
     node_trace.text = node_texts
 
-    # Always set text color to black
-    text_color = '#000000'
+    # Set text color based on Streamlit theme
+    text_color = '#000000' if st.get_option('theme.base') == 'light' else '#FFFFFF'
 
     # Create a separate trace for the text labels
     text_trace = go.Scatter(
