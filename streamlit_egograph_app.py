@@ -93,11 +93,22 @@ def get_streamlit_theme_colors():
     return background_color, text_color
 
 def visualize_graph(G):
-    bg_color, text_color = get_streamlit_theme_colors()
-    
-    # Determine if we're in dark mode
-    is_dark_mode = bg_color.lower() in ['#0e1117', '#000000', 'black']
-    
+    try:
+        bg_color, _ = get_streamlit_theme_colors()
+    except:
+        bg_color = None
+
+    # Fallback to a default light theme if we can't get the background color
+    if not bg_color:
+        bg_color = '#ffffff'  # white
+        is_dark_mode = False
+    else:
+        # Check if the background color is dark
+        # Convert hex to RGB and calculate luminance
+        r, g, b = tuple(int(bg_color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+        luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+        is_dark_mode = luminance < 0.5
+
     # Set plot text color based on background
     plot_text_color = 'white' if is_dark_mode else 'black'
     
