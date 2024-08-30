@@ -95,7 +95,9 @@ def get_streamlit_theme_colors():
 def visualize_graph(G):
     bg_color, _ = get_streamlit_theme_colors()
     plot_text_color = 'black'
-    pos = nx.spring_layout(G, k=0.5, iterations=50)
+    
+    # Increase the k parameter to create more space between nodes
+    pos = nx.spring_layout(G, k=1.0, iterations=50)  # Increased from 0.5 to 1.0
 
     edge_traces = []
     edge_weights = [G.edges[edge]['weight'] for edge in G.edges()]
@@ -184,8 +186,10 @@ def visualize_graph(G):
                         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                         dragmode='pan'))
 
+    # Increase the plot size to accommodate the larger layout
     fig.update_layout(
-        height=700,
+        height=800,  # Increased from 700 to 800
+        width=1000,  # Added width parameter
         plot_bgcolor=bg_color,
         paper_bgcolor=bg_color,
         font_color=plot_text_color,
