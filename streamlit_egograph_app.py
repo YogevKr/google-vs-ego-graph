@@ -86,15 +86,6 @@ def create_egograph(query, target_nodes=40, max_depth=5):
     status_text.text(f"Concept map created with {len(G.nodes())} concepts and {len(G.edges())} connections")
     return G
 
-import streamlit as st
-import networkx as nx
-import plotly.graph_objects as go
-import requests
-import urllib.parse
-from time import sleep
-import random
-import xml.etree.ElementTree as ET
-
 def get_streamlit_theme_colors():
     # Get Streamlit's current theme colors
     background_color = st.get_option("theme.backgroundColor")
@@ -107,7 +98,9 @@ def visualize_graph(G):
     
     # Always use black for text in the plot
     plot_text_color = 'black'
-
+    
+    st.write(f"Background color: {bg_color}")
+    st.write(f"Plot text color: {plot_text_color}")
 
     pos = nx.spring_layout(G, k=0.5, iterations=50)
 
@@ -188,8 +181,8 @@ def visualize_graph(G):
                             xref="paper", yref="paper",
                             x=0.005, y=-0.002 ) ],
                         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
-                    )
+                        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                        dragmode='pan'))  # Set pan as the default drag mode
 
     fig.update_layout(
         height=700,
@@ -198,8 +191,18 @@ def visualize_graph(G):
         font_color=plot_text_color,  # Use black for all text in the plot
     )
 
+    # Update the modebar to have pan selected by default
+    fig.update_layout(
+        modebar=dict(
+            activecolor='#1f77b4',  # Color of the active button
+            bgcolor=bg_color,
+            color=plot_text_color,
+            orientation='v'
+        )
+    )
+
     return fig
-    
+
 def submit_text():
     st.session_state['submitted_text'] = st.session_state.text_input
 
