@@ -77,10 +77,10 @@ def create_egograph(query, target_nodes=40, max_depth=5):
 
         sleep(0.1)  # Rate limiting
 
-    # Calculate node sizes based on incoming edge count
+    # Calculate node sizes based on edge count
     for node in G.nodes():
-        incoming_edges = G.in_edges(node)
-        size = 30 + (len(incoming_edges) * 2)  # Base size of 30, increase by 2 for each incoming edge
+        edge_count = G.degree(node)
+        size = 30 + (edge_count * 2)  # Base size of 30, increase by 2 for each edge
         G.nodes[node]['size'] = size
 
     status_text.text(f"Concept map created with {len(G.nodes())} concepts and {len(G.edges())} connections")
@@ -133,8 +133,8 @@ def visualize_graph(G):
     node_sizes = []
     node_colors = []
     for node in G.nodes(data=True):
-        node_adjacencies.append(len(list(G.neighbors(node[0]))))
-        node_texts.append(f'{node[0]}<br># of connections: {len(list(G.neighbors(node[0])))}')
+        node_adjacencies.append(G.degree(node[0]))
+        node_texts.append(f'{node[0]}<br># of connections: {G.degree(node[0])}')
         node_sizes.append(node[1]['size'])
         node_colors.append(node[1]['color'])
 
