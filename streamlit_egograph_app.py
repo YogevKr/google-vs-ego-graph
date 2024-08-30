@@ -157,7 +157,7 @@ def visualize_graph(G):
                         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
                     )
-    
+
     fig.update_layout(
         height=700,
         plot_bgcolor='rgba(0,0,0,0)',
