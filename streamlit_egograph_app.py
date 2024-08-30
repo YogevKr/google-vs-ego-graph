@@ -95,7 +95,7 @@ def get_streamlit_theme_colors():
 def visualize_graph(G):
     # Get Streamlit's theme colors
     bg_color, _ = get_streamlit_theme_colors()
-    
+
     # Always use black for text in the plot
     plot_text_color = 'black'
     pos = nx.spring_layout(G, k=0.5, iterations=50)
@@ -109,14 +109,24 @@ def visualize_graph(G):
         edge_x.extend([x0, x1, None])
         edge_y.extend([y0, y1, None])
         weight = edge[2]['weight']
-        edge_weights.append(weight)
+        edge_weights.extend([weight, weight, None])
+
+    # Calculate the range of weights
+    min_weight = min(weight for weight in edge_weights if weight is not None)
+    max_weight = max(weight for weight in edge_weights if weight is not None)
+    
+    # Normalize weights to a range between 1 and 10 for line thickness
+    normalized_weights = [
+        1 + 9 * (w - min_weight) / (max_weight - min_weight) if w is not None else None 
+        for w in edge_weights
+    ]
 
     edge_trace = go.Scatter(
         x=edge_x, y=edge_y,
-        line=dict(width=1, color='#888'),  # Use a neutral color for edges
+        line=dict(width=normalized_weights, color='#888'),  # Use normalized weights for line width
         hoverinfo='text',
         mode='lines',
-        text=[f"Weight: {w}" for w in edge_weights],
+        text=[f"Weight: {w}" if w is not None else "" for w in edge_weights],
         opacity=0.7
     )
 
