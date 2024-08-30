@@ -2,4 +2,3 @@ streamlit
 networkx
 plotly
 requests
-fa2
