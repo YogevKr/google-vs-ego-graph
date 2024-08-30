@@ -183,8 +183,13 @@ def main():
     
     with col2:
         st.subheader("Start Exploring")
-        st.text_input("Enter a concept:", key="text_input", on_change=submit_text)
-    
+        search_term = st.text_input("Enter a concept:", key="text_input", on_change=submit_text)
+        generate_button = st.button("Explore Related Concepts")
+        
+    # Handle either Enter key submission or button click
+    if generate_button and not st.session_state.get('submitted_text'):
+        st.session_state['submitted_text'] = search_term
+
     with col1:
         if 'submitted_text' in st.session_state:
             search_term = st.session_state.submitted_text
@@ -202,5 +207,7 @@ def main():
             else:
                 st.warning("Please enter a concept to explore.")
 
+if __name__ == "__main__":
+    main()
 if __name__ == "__main__":
     main()
