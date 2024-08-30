@@ -86,21 +86,19 @@ def create_egograph(query, target_nodes=40, max_depth=5):
     status_text.text(f"Concept map created with {len(G.nodes())} concepts and {len(G.edges())} connections")
     return G
 
-# Initialize session state for theme
-if 'dark_theme' not in st.session_state:
-    st.session_state.dark_theme = False
-
-# Add this at the beginning of your main() function or where you start building your UI
-def theme_toggle():
-    st.session_state.dark_theme = not st.session_state.dark_theme
-
-# Add a toggle button for theme
-st.button("Toggle Theme", on_click=theme_toggle)
+def get_streamlit_theme_colors():
+    # Get Streamlit's current theme colors
+    background_color = st.get_option("theme.backgroundColor")
+    text_color = st.get_option("theme.textColor")
+    return background_color, text_color
 
 def visualize_graph(G):
-    # Use the session state to determine the theme
-    is_dark_theme = st.session_state.dark_theme    
-    text_color = 'white' if is_dark_theme else 'black'
+    # Get Streamlit's theme colors
+    bg_color, text_color = get_streamlit_theme_colors()
+    
+    st.write(f"Background color: {bg_color}")
+    st.write(f"Text color: {text_color}")
+
     pos = nx.spring_layout(G, k=0.5, iterations=50)
 
     edge_x = []
@@ -116,7 +114,7 @@ def visualize_graph(G):
 
     edge_trace = go.Scatter(
         x=edge_x, y=edge_y,
-        line=dict(width=1, color='#888'),
+        line=dict(width=1, color=text_color),
         hoverinfo='text',
         mode='lines',
         text=[f"Weight: {w}" for w in edge_weights],
@@ -183,12 +181,11 @@ def visualize_graph(G):
                         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
                     )
 
-    # Set the background color based on the theme
-    bg_color = 'rgba(0,0,0,0)' if is_dark_theme else 'white'
     fig.update_layout(
         height=700,
         plot_bgcolor=bg_color,
         paper_bgcolor=bg_color,
+        font_color=text_color,
     )
 
     return fig
