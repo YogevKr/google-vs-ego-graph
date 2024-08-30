@@ -166,6 +166,9 @@ def visualize_graph(G):
 
     return fig
 
+def submit_text():
+    st.session_state['submitted_text'] = st.session_state.text_input
+
 def main():
     st.title("Google VS Explorer")
     
@@ -180,11 +183,11 @@ def main():
     
     with col2:
         st.subheader("Start Exploring")
-        search_term = st.text_input("Enter a concept:")
-        generate_button = st.button("Explore Related Concepts")
+        st.text_input("Enter a concept:", key="text_input", on_change=submit_text)
     
     with col1:
-        if generate_button:
+        if 'submitted_text' in st.session_state:
+            search_term = st.session_state.submitted_text
             if search_term:
                 with st.spinner("Generating concept map..."):
                     try:
