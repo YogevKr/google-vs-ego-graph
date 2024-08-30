@@ -104,7 +104,7 @@ def visualize_graph(G):
 
     node_trace = go.Scatter(
         x=node_x, y=node_y,
-        mode='markers+text',
+        mode='markers',
         hoverinfo='text',
         marker=dict(
             showscale=False,
@@ -126,13 +126,23 @@ def visualize_graph(G):
 
     node_trace.marker.color = node_colors
     node_trace.marker.size = node_sizes
-    node_trace.text = list(G.nodes())
-    node_trace.textposition = 'middle center'
+    node_trace.text = node_texts
 
-    # Ensure text is white and increase font size
-    node_trace.textfont = dict(color='white', size=14)
+    # Determine text color based on Streamlit theme
+    text_color = 'black' if st.get_option('theme.base') == 'light' else 'white'
 
-    fig = go.Figure(data=[edge_trace, node_trace],
+    # Create a separate trace for the text labels
+    text_trace = go.Scatter(
+        x=[pos[node][0] + 0.03 for node in G.nodes()],  # Offset x position slightly
+        y=[pos[node][1] for node in G.nodes()],
+        mode='text',
+        text=list(G.nodes()),
+        textposition='middle left',
+        textfont=dict(color=text_color, size=14),
+        hoverinfo='none'
+    )
+
+    fig = go.Figure(data=[edge_trace, node_trace, text_trace],
                     layout=go.Layout(
                         title='<br>Concept Map',
                         titlefont_size=16,
@@ -152,7 +162,6 @@ def visualize_graph(G):
         height=700,
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        template='plotly_dark',
     )
 
     return fig
