@@ -6,6 +6,7 @@ import urllib.parse
 from time import sleep
 import random
 import xml.etree.ElementTree as ET
+import colorsys
 
 def get_google_suggestions(query):
     url = f'http://suggestqueries.google.com/complete/search?&output=toolbar&gl=us&hl=en&q={urllib.parse.quote(query)}'
@@ -75,6 +76,17 @@ def create_egograph(query, target_nodes=40, max_depth=5):
     status_text.text(f"Concept map created with {len(G.nodes())} concepts and {len(G.edges())} connections")
     return G
 
+def get_text_color(bg_color):
+    # Convert hex to RGB
+    bg_color = bg_color.lstrip('#')
+    rgb = tuple(int(bg_color[i:i+2], 16) for i in (0, 2, 4))
+    
+    # Convert RGB to HSL
+    h, l, s = colorsys.rgb_to_hls(*[x/255 for x in rgb])
+    
+    # Choose white or black based on luminance
+    return '#000000' if l > 0.5 else '#FFFFFF'
+
 def visualize_graph(G):
     pos = nx.spring_layout(G, k=0.5, iterations=50)
 
@@ -115,16 +127,20 @@ def visualize_graph(G):
     node_texts = []
     node_sizes = []
     node_colors = []
+    text_colors = []
     for node, adjacencies in enumerate(G.adjacency()):
         node_adjacencies.append(len(adjacencies[1]))
         node_texts.append(f'{adjacencies[0]}<br># of connections: {len(adjacencies[1])}')
         node_sizes.append(G.nodes[adjacencies[0]]['size'])
-        node_colors.append(G.nodes[adjacencies[0]]['color'])
+        node_color = G.nodes[adjacencies[0]]['color']
+        node_colors.append(node_color)
+        text_colors.append(get_text_color(node_color))
 
     node_trace.marker.color = node_colors
     node_trace.marker.size = node_sizes
     node_trace.text = list(G.nodes())
     node_trace.textposition = 'top center'
+    node_trace.textfont = dict(color=text_colors)
 
     fig = go.Figure(data=[edge_trace, node_trace],
                     layout=go.Layout(
