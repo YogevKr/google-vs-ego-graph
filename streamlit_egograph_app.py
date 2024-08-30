@@ -200,7 +200,6 @@ def main():
                         fig = visualize_graph(G)
                         st.plotly_chart(fig, use_container_width=True)
                         st.success(f"Map generated with {len(G.nodes())} concepts and {len(G.edges())} connections.")
-                        st.info("Interact with the map: drag to move, scroll to zoom, hover for details.")
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
                         st.error("Please try again with a different concept.")
