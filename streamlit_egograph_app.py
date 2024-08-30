@@ -107,9 +107,7 @@ def visualize_graph(G):
     
     # Always use black for text in the plot
     plot_text_color = 'black'
-    
-    st.write(f"Background color: {bg_color}")
-    st.write(f"Plot text color: {plot_text_color}")
+
 
     pos = nx.spring_layout(G, k=0.5, iterations=50)
 
