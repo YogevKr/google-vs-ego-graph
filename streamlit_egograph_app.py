@@ -39,7 +39,7 @@ def clean_suggestions(suggestions, original_term, previous_terms):
     return cleaned[:5]  # Return top 5 suggestions
 
 @st.cache_data
-def create_egograph(query, target_nodes=40, max_depth=5):
+def create_egograph(query, target_nodes=50, max_depth=6):
     G = nx.Graph()
     G.add_node(query, size=40, color='#FFA500', level=0)  # Orange for root node
 
@@ -85,7 +85,7 @@ def create_egograph(query, target_nodes=40, max_depth=5):
 
     status_text.text(f"Concept map created with {len(G.nodes())} concepts and {len(G.edges())} connections")
     return G
-
+    
 def get_streamlit_theme_colors():
     # Get Streamlit's current theme colors
     background_color = st.get_option("theme.backgroundColor")
