@@ -28,34 +28,22 @@ def fallback_suggestions(query):
 
 def clean_suggestions(suggestions, original_term, previous_terms):
     cleaned = []
-    original_term_parts = set(original_term.lower().split())
     for s in suggestions:
         terms = s.lower().split()
         if 'vs' in terms:
             vs_index = terms.index('vs')
             if vs_index + 1 < len(terms):
-                potential_term = ' '.join(terms[vs_index + 1:])
-                potential_term_parts = set(potential_term.split())
-                
-                # Check if the term contains multiple 'vs'
-                if terms.count('vs') > 1:
-                    continue
-                
-                # Check if the term contains the original search term
-                if not original_term_parts.issubset(potential_term_parts):
-                    # Check if the term contains any previously accepted terms
-                    if not any(prev_term in potential_term for prev_term in previous_terms):
-                        cleaned.append(potential_term)
-
+                term = ' '.join(terms[vs_index + 1:])
+                if term not in previous_terms and term != original_term.lower():
+                    cleaned.append(term)
     return cleaned[:5]  # Return top 5 suggestions
 
 @st.cache_data
 def create_egograph(query, target_nodes=50, max_depth=6):
     G = nx.Graph()
-    G.add_node(query, size=40, level=0)  # Root node
+    G.add_node(query, size=40, color='#FFA500', level=0)  # Orange for root node
 
-    colors = ['#FFA500', '#4CAF50', '#2196F3', '#9C27B0', '#FF5722', '#795548']  # Orange, Green, Blue, Purple, Deep Orange, Brown
-
+    colors = ['#4CAF50', '#2196F3', '#9C27B0', '#FF5722', '#795548']  # Green, Blue, Purple, Deep Orange, Brown
     explored_terms = set([query])
     terms_to_explore = [(query, 0)]
 
@@ -72,11 +60,15 @@ def create_egograph(query, target_nodes=50, max_depth=6):
         suggestions = get_google_suggestions(f"{current_term} vs")
         cleaned_suggestions = clean_suggestions(suggestions, current_term, explored_terms)
 
-        for suggestion in cleaned_suggestions:
+        for i, suggestion in enumerate(cleaned_suggestions):
             if suggestion not in explored_terms and len(G.nodes()) < target_nodes:
-                G.add_node(suggestion, size=30, level=current_level + 1)
-                weight = 5  # All edges now have the same weight
-                G.add_edge(current_term, suggestion, weight=weight)
+                color = random.choice(colors)
+                G.add_node(suggestion, size=30, color=color, level=current_level + 1)
+                weight = 5 - i  # Weight based on suggestion order
+                if G.has_edge(current_term, suggestion):
+                    G[current_term][suggestion]['weight'] += weight
+                else:
+                    G.add_edge(current_term, suggestion, weight=weight)
                 explored_terms.add(suggestion)
                 terms_to_explore.append((suggestion, current_level + 1))
 
@@ -85,39 +77,20 @@ def create_egograph(query, target_nodes=50, max_depth=6):
 
         sleep(0.1)  # Rate limiting
 
-    # Calculate node sizes and assign colors based on edge count
-    edge_counts = dict(G.degree())
-    unique_edge_counts = set(edge_counts.values())
-    
-    if len(unique_edge_counts) == 1:
-        # If all nodes have the same degree, assign colors randomly
-        color_assignments = {node: random.choice(colors) for node in G.nodes()}
-    else:
-        max_edge_count = max(edge_counts.values())
-        min_edge_count = min(edge_counts.values())
-        if max_edge_count == min_edge_count:
-            # If all nodes have the same degree, assign colors randomly
-            color_assignments = {node: random.choice(colors) for node in G.nodes()}
-        else:
-            color_assignments = {}
-            for node, edge_count in edge_counts.items():
-                # Normalize the edge count to a value between 0 and 1
-                normalized_count = (edge_count - min_edge_count) / (max_edge_count - min_edge_count)
-                color_index = min(int(normalized_count * (len(colors) - 1)), len(colors) - 1)
-                color_assignments[node] = colors[color_index]
-    
+    # Calculate node sizes based on edge count
     for node in G.nodes():
-        edge_count = edge_counts[node]
+        edge_count = G.degree(node)
         size = 30 + (edge_count * 2)  # Base size of 30, increase by 2 for each edge
-        
         G.nodes[node]['size'] = size
-        G.nodes[node]['color'] = color_assignments[node]
-
-    # Ensure root node is always orange
-    G.nodes[query]['color'] = colors[0]
 
     status_text.text(f"Concept map created with {len(G.nodes())} concepts and {len(G.edges())} connections")
     return G
+    
+def get_streamlit_theme_colors():
+    try:
+        return st.get_option("theme.backgroundColor"), st.get_option("theme.textColor")
+    except:
+        return None, None
 
 def visualize_graph(G):
     pos = nx.spring_layout(G, k=1.0, iterations=50)
@@ -132,22 +105,20 @@ def visualize_graph(G):
         x1, y1 = pos[edge[1]]
         weight = edge[2]['weight']
 
-        # Handle case where all weights are the same
-        if min_weight == max_weight:
-            normalized_weight = 5  # Use a default middle value
-        else:
-            normalized_weight = 1 + 9 * (weight - min_weight) / (max_weight - min_weight)  # Scale from 1 to 10
+        # Normalize the weight to determine line thickness
+        normalized_weight = 1 + 9 * (weight - min_weight) / (max_weight - min_weight)  # Scale from 1 to 10
 
         edge_trace = go.Scatter(
             x=[x0, x1, None],
             y=[y0, y1, None],
-            line=dict(width=normalized_weight, color='rgba(200, 200, 200, 0.7)'),
+            line=dict(width=normalized_weight, color='rgba(200, 200, 200, 0.7)'),  # Fixed opacity, variable width
             hoverinfo='text',
             mode='lines',
             text=f"Weight: {weight}",
         )
         edge_traces.append(edge_trace)
 
+    # Rest of the function remains the same
     node_x = []
     node_y = []
     for node in G.nodes():
@@ -161,6 +132,8 @@ def visualize_graph(G):
         hoverinfo='text',
         marker=dict(
             showscale=False,
+            colorscale='YlGnBu',
+            reversescale=True,
             color=[],
             size=[],
             line_width=2))
@@ -213,24 +186,27 @@ def visualize_graph(G):
     )
 
     return fig
+    
+def submit_text():
+    st.session_state['submitted_text'] = st.session_state.text_input
 
 def main():
     st.title("Google VS Explorer")
-
+    
     st.markdown("""
     Explore related concepts using Google's "vs" search suggestions.
-
+    
     **Acknowledgment**: Inspired by David Foster's article 
     [The Google 'vs' Trick](https://medium.com/applied-data-science/the-google-vs-trick-618c8fd5359f).
     """)
-
+    
     col1, col2 = st.columns([3, 1])
-
+    
     with col2:
         st.subheader("Start Exploring")
         search_term = st.text_input("Enter a concept:", key="text_input", on_change=submit_text)
         generate_button = st.button("Explore Related Concepts")
-
+        
     # Handle either Enter key submission or button click
     if generate_button and not st.session_state.get('submitted_text'):
         st.session_state['submitted_text'] = search_term
@@ -242,15 +218,12 @@ def main():
                 with st.spinner("Generating concept map..."):
                     try:
                         G = create_egograph(search_term)
-                        if len(G.nodes()) > 1:  # Check if we have more than just the root node
-                            fig = visualize_graph(G)
-                            st.plotly_chart(fig, use_container_width=True)
-                            st.success(f"Map generated with {len(G.nodes())} concepts and {len(G.edges())} connections.")
-                        else:
-                            st.warning("Unable to generate a concept map. Try a different search term or check your internet connection.")
+                        fig = visualize_graph(G)
+                        st.plotly_chart(fig, use_container_width=True)
+                        st.success(f"Map generated with {len(G.nodes())} concepts and {len(G.edges())} connections.")
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
-                        st.error("Please try again with a different concept or check your internet connection.")
+                        st.error("Please try again with a different concept.")
             else:
                 st.warning("Please enter a concept to explore.")
 
