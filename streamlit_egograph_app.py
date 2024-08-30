@@ -127,20 +127,19 @@ def visualize_graph(G):
     node_texts = []
     node_sizes = []
     node_colors = []
-    text_colors = []
     for node, adjacencies in enumerate(G.adjacency()):
         node_adjacencies.append(len(adjacencies[1]))
         node_texts.append(f'{adjacencies[0]}<br># of connections: {len(adjacencies[1])}')
         node_sizes.append(G.nodes[adjacencies[0]]['size'])
-        node_color = G.nodes[adjacencies[0]]['color']
-        node_colors.append(node_color)
-        text_colors.append(get_text_color(node_color))
+        node_colors.append(G.nodes[adjacencies[0]]['color'])
 
     node_trace.marker.color = node_colors
     node_trace.marker.size = node_sizes
     node_trace.text = list(G.nodes())
     node_trace.textposition = 'top center'
-    node_trace.textfont = dict(color=text_colors)
+
+    # Determine text color based on Streamlit theme
+    text_color = 'black' if st.get_option('theme.base') == 'light' else 'white'
 
     fig = go.Figure(data=[edge_trace, node_trace],
                     layout=go.Layout(
@@ -157,7 +156,34 @@ def visualize_graph(G):
                         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
                     )
-    fig.update_layout(height=700)
+    
+    # Set consistent text color and add background
+    fig.update_traces(textfont=dict(color=text_color, size=10),
+                      textfont_family="Arial",
+                      textfont_weight="bold",
+                      selector=dict(type='scatter', mode='markers+text'))
+    
+    fig.update_layout(
+        height=700,
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+    )
+
+    # Add semi-transparent background to text for better visibility
+    for i, node in enumerate(G.nodes()):
+        fig.add_annotation(
+            x=node_trace.x[i],
+            y=node_trace.y[i],
+            text=node,
+            showarrow=False,
+            font=dict(color=text_color, size=10),
+            bgcolor='rgba(255, 255, 255, 0.5)' if text_color == 'black' else 'rgba(0, 0, 0, 0.5)',
+            bordercolor='rgba(0, 0, 0, 0)',
+            borderwidth=1,
+            borderpad=2,
+            opacity=0.8
+        )
+
     return fig
 
 def main():
