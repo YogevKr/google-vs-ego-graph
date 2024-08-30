@@ -87,6 +87,13 @@ def create_egograph(query, target_nodes=40, max_depth=5):
     return G
 
 def visualize_graph(G):
+    # Debug output for theme detection
+    theme = st.get_option("theme.base")
+    st.write(f"Current theme: {theme}")
+    
+    text_color = 'black' if theme == "light" else 'white'
+    st.write(f"Chosen text color: {text_color}")
+
     pos = nx.spring_layout(G, k=0.5, iterations=50)
 
     edge_x = []
@@ -141,9 +148,6 @@ def visualize_graph(G):
     node_trace.marker.color = node_colors
     node_trace.marker.size = node_sizes
     node_trace.text = node_texts
-
-    # Set text color based on Streamlit theme
-    text_color = '#000000' if st.get_option('theme.base') == 'light' else '#FFFFFF'
 
     # Create a separate trace for the text labels
     text_trace = go.Scatter(
