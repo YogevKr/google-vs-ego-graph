@@ -104,21 +104,21 @@ def visualize_graph(G):
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
         weight = edge[2]['weight']
-        
-        normalized_weight = 0.3 + 0.7 * (weight - min_weight) / (max_weight - min_weight)
-        
-        edge_color = f'rgba(100, 100, 100, {normalized_weight})'
-        
+
+        # Normalize the weight to determine line thickness
+        normalized_weight = 1 + 9 * (weight - min_weight) / (max_weight - min_weight)  # Scale from 1 to 10
+
         edge_trace = go.Scatter(
             x=[x0, x1, None],
             y=[y0, y1, None],
-            line=dict(width=2, color=edge_color),
+            line=dict(width=normalized_weight, color='rgba(100, 100, 100, 0.7)'),  # Fixed opacity, variable width
             hoverinfo='text',
             mode='lines',
             text=f"Weight: {weight}",
         )
         edge_traces.append(edge_trace)
 
+    # Rest of the function remains the same
     node_x = []
     node_y = []
     for node in G.nodes():
