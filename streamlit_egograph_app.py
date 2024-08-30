@@ -97,32 +97,27 @@ def visualize_graph(G):
     plot_text_color = 'black'
     pos = nx.spring_layout(G, k=0.5, iterations=50)
 
-    edge_x = []
-    edge_y = []
-    edge_weights = []
+    edge_traces = []
+    edge_weights = [G.edges[edge]['weight'] for edge in G.edges()]
+    min_weight = min(edge_weights)
+    max_weight = max(edge_weights)
+
     for edge in G.edges(data=True):
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
-        edge_x.extend([x0, x1, None])
-        edge_y.extend([y0, y1, None])
         weight = edge[2]['weight']
-        edge_weights.append(weight)
-
-    # Normalize weights to a range between 0 and 1 for color intensity
-    min_weight = min(edge_weights)
-    max_weight = max(edge_weights)
-    normalized_weights = [(w - min_weight) / (max_weight - min_weight) for w in edge_weights]
-
-    edge_colors = [f'rgba(136, 136, 136, {w})' for w in normalized_weights]
-
-    edge_trace = go.Scatter(
-        x=edge_x, y=edge_y,
-        line=dict(width=2, color=edge_colors),  # Use a fixed width and vary the color intensity
-        hoverinfo='text',
-        mode='lines',
-        text=[f"Weight: {w}" for w in edge_weights],
-        opacity=1  # Set to 1 as we're using color for opacity
-    )
+        normalized_weight = (weight - min_weight) / (max_weight - min_weight)
+        color = f'rgba(136, 136, 136, {normalized_weight})'
+        
+        edge_trace = go.Scatter(
+            x=[x0, x1, None],
+            y=[y0, y1, None],
+            line=dict(width=2, color=color),
+            hoverinfo='text',
+            mode='lines',
+            text=f"Weight: {weight}",
+        )
+        edge_traces.append(edge_trace)
 
     node_x = []
     node_y = []
@@ -162,12 +157,15 @@ def visualize_graph(G):
         y=[pos[node][1] + 0.1 for node in G.nodes()],
         mode='text',
         text=list(G.nodes()),
-        textposition='bottom center',
+        textposition='top center',
         textfont=dict(color=plot_text_color, size=14),
         hoverinfo='none'
     )
 
-    fig = go.Figure(data=[edge_trace, node_trace, text_trace],
+    # Combine all traces
+    data = edge_traces + [node_trace, text_trace]
+
+    fig = go.Figure(data=data,
                     layout=go.Layout(
                         title='<br>Concept Map',
                         titlefont_size=16,
@@ -200,7 +198,6 @@ def visualize_graph(G):
     )
 
     return fig
-
 def submit_text():
     st.session_state['submitted_text'] = st.session_state.text_input
 
