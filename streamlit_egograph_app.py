@@ -88,10 +88,10 @@ def create_egograph(query, target_nodes=40, max_depth=5):
 
 def visualize_graph(G):
     # Debug output for theme detection
-    theme = st.get_option("theme.base")
-    st.write(f"Current theme: {theme}")
+    is_dark_theme = st.config.get_option("theme.darkMode")
+    st.write(f"Is dark theme: {is_dark_theme}")
     
-    text_color = 'black' if theme == "light" else 'white'
+    text_color = 'white' if is_dark_theme else 'black'
     st.write(f"Chosen text color: {text_color}")
 
     pos = nx.spring_layout(G, k=0.5, iterations=50)
