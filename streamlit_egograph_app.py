@@ -40,9 +40,10 @@ def clean_suggestions(suggestions, original_term, previous_terms):
 
 @st.cache_data
 def create_egograph(query, target_nodes=50, max_depth=6):
-    G = nx.DiGraph()  # Change to DiGraph to keep track of edge directions
-    G.add_node(query, size=40, color='#FFA500', level=0, in_degree=0)  # Orange for root node
+    G = nx.Graph()
+    G.add_node(query, size=40, color='#FFA500', level=0)  # Orange for root node
 
+    colors = ['#4CAF50', '#2196F3', '#9C27B0', '#FF5722', '#795548']  # Green, Blue, Purple, Deep Orange, Brown
     explored_terms = set([query])
     terms_to_explore = [(query, 0)]
 
@@ -61,13 +62,13 @@ def create_egograph(query, target_nodes=50, max_depth=6):
 
         for i, suggestion in enumerate(cleaned_suggestions):
             if suggestion not in explored_terms and len(G.nodes()) < target_nodes:
-                if not G.has_node(suggestion):
-                    G.add_node(suggestion, size=30, color='#CCCCCC', level=current_level + 1, in_degree=1)
-                else:
-                    G.nodes[suggestion]['in_degree'] += 1
-                
+                color = random.choice(colors)
+                G.add_node(suggestion, size=30, color=color, level=current_level + 1)
                 weight = 5 - i  # Weight based on suggestion order
-                G.add_edge(current_term, suggestion, weight=weight)
+                if G.has_edge(current_term, suggestion):
+                    G[current_term][suggestion]['weight'] += weight
+                else:
+                    G.add_edge(current_term, suggestion, weight=weight)
                 explored_terms.add(suggestion)
                 terms_to_explore.append((suggestion, current_level + 1))
 
@@ -76,14 +77,11 @@ def create_egograph(query, target_nodes=50, max_depth=6):
 
         sleep(0.1)  # Rate limiting
 
-    # Calculate node sizes and colors based on in_degree
-    max_in_degree = max(dict(G.in_degree()).values())
+    # Calculate node sizes based on edge count
     for node in G.nodes():
-        in_degree = G.in_degree(node)
-        size = 30 + (in_degree * 20)  # Base size of 30, increase by 20 for each incoming edge
-        color = f'rgb({int(255 * in_degree / max_in_degree)}, 0, {int(255 * (1 - in_degree / max_in_degree))})'
+        edge_count = G.degree(node)
+        size = 30 + (edge_count * 2)  # Base size of 30, increase by 2 for each edge
         G.nodes[node]['size'] = size
-        G.nodes[node]['color'] = color
 
     status_text.text(f"Concept map created with {len(G.nodes())} concepts and {len(G.edges())} connections")
     return G
@@ -98,21 +96,29 @@ def visualize_graph(G):
     pos = nx.spring_layout(G, k=1.0, iterations=50)
 
     edge_traces = []
+    edge_weights = [G.edges[edge]['weight'] for edge in G.edges()]
+    min_weight = min(edge_weights)
+    max_weight = max(edge_weights)
+
     for edge in G.edges(data=True):
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
         weight = edge[2]['weight']
 
+        # Normalize the weight to determine line thickness
+        normalized_weight = 1 + 9 * (weight - min_weight) / (max_weight - min_weight)  # Scale from 1 to 10
+
         edge_trace = go.Scatter(
             x=[x0, x1, None],
             y=[y0, y1, None],
-            line=dict(width=weight, color='rgba(200, 200, 200, 0.7)'),
+            line=dict(width=normalized_weight, color='rgba(200, 200, 200, 0.7)'),  # Fixed opacity, variable width
             hoverinfo='text',
             mode='lines',
             text=f"Weight: {weight}",
         )
         edge_traces.append(edge_trace)
 
+    # Rest of the function remains the same
     node_x = []
     node_y = []
     for node in G.nodes():
@@ -125,26 +131,22 @@ def visualize_graph(G):
         mode='markers',
         hoverinfo='text',
         marker=dict(
-            showscale=True,
-            colorscale='Viridis',
+            showscale=False,
+            colorscale='YlGnBu',
             reversescale=True,
             color=[],
             size=[],
-            colorbar=dict(
-                thickness=15,
-                title='Node Connections',
-                xanchor='left',
-                titleside='right'
-            ),
             line_width=2))
 
+    node_adjacencies = []
     node_texts = []
     node_sizes = []
     node_colors = []
-    for node, attrs in G.nodes(data=True):
-        node_texts.append(f'{node}<br># of incoming connections: {attrs["in_degree"]}')
-        node_sizes.append(attrs['size'])
-        node_colors.append(attrs['color'])
+    for node in G.nodes(data=True):
+        node_adjacencies.append(G.degree(node[0]))
+        node_texts.append(f'{node[0]}<br># of connections: {G.degree(node[0])}')
+        node_sizes.append(node[1]['size'])
+        node_colors.append(node[1]['color'])
 
     node_trace.marker.color = node_colors
     node_trace.marker.size = node_sizes
