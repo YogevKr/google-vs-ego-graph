@@ -28,15 +28,25 @@ def fallback_suggestions(query):
 
 def clean_suggestions(suggestions, original_term, previous_terms):
     cleaned = []
+    original_term = original_term.lower()
+    previous_terms = set(term.lower() for term in previous_terms)
+
     for s in suggestions:
         terms = s.lower().split()
         if 'vs' in terms:
             vs_index = terms.index('vs')
             if vs_index + 1 < len(terms):
                 term = ' '.join(terms[vs_index + 1:])
-                if term not in previous_terms and term != original_term.lower():
+                
+                # Check if the term meets all criteria
+                if (term not in previous_terms and
+                    term != original_term and
+                    original_term not in term and
+                    'vs' not in term and
+                    all(prev_term not in term for prev_term in previous_terms)):
                     cleaned.append(term)
-    return cleaned[:5]  # Return top 5 suggestions
+
+    return cleaned[:5]
 
 @st.cache_data
 def create_egograph(query, target_nodes=50, max_depth=6):
@@ -44,7 +54,7 @@ def create_egograph(query, target_nodes=50, max_depth=6):
     G.add_node(query, size=40, color='#FFA500', level=0)  # Orange for root node
 
     colors = ['#4CAF50', '#2196F3', '#9C27B0', '#FF5722', '#795548']  # Green, Blue, Purple, Deep Orange, Brown
-    explored_terms = set([query])
+    explored_terms = set([query.lower()])  # Use a set for efficient lookup
     terms_to_explore = [(query, 0)]
 
     with st.expander("Concept Map Creation Process", expanded=False):
@@ -61,7 +71,7 @@ def create_egograph(query, target_nodes=50, max_depth=6):
         cleaned_suggestions = clean_suggestions(suggestions, current_term, explored_terms)
 
         for i, suggestion in enumerate(cleaned_suggestions):
-            if suggestion not in explored_terms and len(G.nodes()) < target_nodes:
+            if suggestion.lower() not in explored_terms and len(G.nodes()) < target_nodes:
                 color = random.choice(colors)
                 G.add_node(suggestion, size=30, color=color, level=current_level + 1)
                 weight = 5 - i  # Weight based on suggestion order
@@ -69,7 +79,7 @@ def create_egograph(query, target_nodes=50, max_depth=6):
                     G[current_term][suggestion]['weight'] += weight
                 else:
                     G.add_edge(current_term, suggestion, weight=weight)
-                explored_terms.add(suggestion)
+                explored_terms.add(suggestion.lower())
                 terms_to_explore.append((suggestion, current_level + 1))
 
         progress = min(len(G.nodes()) / target_nodes, 1.0)
