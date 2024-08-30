@@ -87,26 +87,23 @@ def create_egograph(query, target_nodes=50, max_depth=6):
     return G
     
 def get_streamlit_theme_colors():
-    # Get Streamlit's current theme colors
-    background_color = st.get_option("theme.backgroundColor")
-    text_color = st.get_option("theme.textColor")
-    return background_color, text_color
-
-import streamlit as st
-import plotly.graph_objects as go
-import networkx as nx
+    try:
+        return st.get_option("theme.backgroundColor"), st.get_option("theme.textColor")
+    except:
+        return None, None
 
 def visualize_graph(G):
-    # Get the current Streamlit theme
-    theme = st.get_option("theme.base")
-    
-    # Set background and text colors based on the theme
-    if theme == "light":
-        bg_color = "white"
-        text_color = "black"
-    else:  # Dark theme
-        bg_color = "#0E1117"  # Streamlit's dark mode background color
-        text_color = "white"
+    bg_color, text_color = get_streamlit_theme_colors()
+
+    # Fallback to a default light theme if we can't get the colors
+    if not bg_color or not text_color:
+        bg_color = '#ffffff'  # white
+        text_color = '#000000'  # black
+
+    # Determine if we're in dark mode
+    r, g, b = tuple(int(bg_color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+    luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    is_dark_mode = luminance < 0.5
 
     pos = nx.spring_layout(G, k=1.0, iterations=50)
 
@@ -122,8 +119,8 @@ def visualize_graph(G):
         
         normalized_weight = 0.3 + 0.7 * (weight - min_weight) / (max_weight - min_weight)
         
-        # Adjust edge color based on theme
-        edge_color = f'rgba(200, 200, 200, {normalized_weight})' if theme == "dark" else f'rgba(100, 100, 100, {normalized_weight})'
+        # Adjust edge color based on dark/light mode
+        edge_color = f'rgba(200, 200, 200, {normalized_weight})' if is_dark_mode else f'rgba(100, 100, 100, {normalized_weight})'
         
         edge_trace = go.Scatter(
             x=[x0, x1, None],
