@@ -92,26 +92,22 @@ def get_streamlit_theme_colors():
     text_color = st.get_option("theme.textColor")
     return background_color, text_color
 
+import streamlit as st
+import plotly.graph_objects as go
+import networkx as nx
+
 def visualize_graph(G):
-    try:
-        bg_color, _ = get_streamlit_theme_colors()
-    except:
-        bg_color = None
-
-    # Fallback to a default light theme if we can't get the background color
-    if not bg_color:
-        bg_color = '#ffffff'  # white
-        is_dark_mode = False
-    else:
-        # Check if the background color is dark
-        # Convert hex to RGB and calculate luminance
-        r, g, b = tuple(int(bg_color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
-        luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-        is_dark_mode = luminance < 0.5
-
-    # Set plot text color based on background
-    plot_text_color = 'white' if is_dark_mode else 'black'
+    # Get the current Streamlit theme
+    theme = st.get_option("theme.base")
     
+    # Set background and text colors based on the theme
+    if theme == "light":
+        bg_color = "white"
+        text_color = "black"
+    else:  # Dark theme
+        bg_color = "#0E1117"  # Streamlit's dark mode background color
+        text_color = "white"
+
     pos = nx.spring_layout(G, k=1.0, iterations=50)
 
     edge_traces = []
@@ -126,8 +122,8 @@ def visualize_graph(G):
         
         normalized_weight = 0.3 + 0.7 * (weight - min_weight) / (max_weight - min_weight)
         
-        # Adjust edge color based on dark/light mode
-        edge_color = f'rgba(200, 200, 200, {normalized_weight})' if is_dark_mode else f'rgba(100, 100, 100, {normalized_weight})'
+        # Adjust edge color based on theme
+        edge_color = f'rgba(200, 200, 200, {normalized_weight})' if theme == "dark" else f'rgba(100, 100, 100, {normalized_weight})'
         
         edge_trace = go.Scatter(
             x=[x0, x1, None],
@@ -178,7 +174,7 @@ def visualize_graph(G):
         mode='text',
         text=list(G.nodes()),
         textposition='top center',
-        textfont=dict(color=plot_text_color, size=12),
+        textfont=dict(color=text_color, size=12),
         hoverinfo='none'
     )
 
@@ -205,14 +201,14 @@ def visualize_graph(G):
         width=1000,
         plot_bgcolor=bg_color,
         paper_bgcolor=bg_color,
-        font_color=plot_text_color,
+        font_color=text_color,
     )
 
     fig.update_layout(
         modebar=dict(
             activecolor='#1f77b4',
             bgcolor=bg_color,
-            color=plot_text_color,
+            color=text_color,
             orientation='v'
         )
     )
