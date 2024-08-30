@@ -106,8 +106,11 @@ def visualize_graph(G):
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
         weight = edge[2]['weight']
-        normalized_weight = (weight - min_weight) / (max_weight - min_weight)
-        color = f'rgba(136, 136, 136, {normalized_weight})'
+        
+        # Adjust the opacity range to be between 0.3 and 1
+        normalized_weight = 0.3 + 0.7 * (weight - min_weight) / (max_weight - min_weight)
+        
+        color = f'rgba(100, 100, 100, {normalized_weight})'
         
         edge_trace = go.Scatter(
             x=[x0, x1, None],
@@ -198,6 +201,7 @@ def visualize_graph(G):
     )
 
     return fig
+    
 def submit_text():
     st.session_state['submitted_text'] = st.session_state.text_input
 
