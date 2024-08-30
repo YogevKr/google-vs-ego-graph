@@ -6,7 +6,19 @@ import urllib.parse
 from time import sleep
 import random
 import xml.etree.ElementTree as ET
-import colorsys
+
+# Set page config at the very beginning
+st.set_page_config(page_title="Google VS Explorer", layout="wide", initial_sidebar_state="collapsed")
+
+# Force dark mode using CSS
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #0E1117;
+        color: white;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 def get_google_suggestions(query):
     url = f'http://suggestqueries.google.com/complete/search?&output=toolbar&gl=us&hl=en&q={urllib.parse.quote(query)}'
@@ -76,17 +88,6 @@ def create_egograph(query, target_nodes=40, max_depth=5):
     status_text.text(f"Concept map created with {len(G.nodes())} concepts and {len(G.edges())} connections")
     return G
 
-def get_text_color(bg_color):
-    # Convert hex to RGB
-    bg_color = bg_color.lstrip('#')
-    rgb = tuple(int(bg_color[i:i+2], 16) for i in (0, 2, 4))
-    
-    # Convert RGB to HSL
-    h, l, s = colorsys.rgb_to_hls(*[x/255 for x in rgb])
-    
-    # Choose white or black based on luminance
-    return '#000000' if l > 0.5 else '#FFFFFF'
-
 def visualize_graph(G):
     pos = nx.spring_layout(G, k=0.5, iterations=50)
 
@@ -136,11 +137,10 @@ def visualize_graph(G):
     node_trace.marker.color = node_colors
     node_trace.marker.size = node_sizes
     node_trace.text = list(G.nodes())
-    node_trace.textposition = 'top center'
-
-    # Ensure text is white and move it closer to the nodes
-    node_trace.textfont = dict(color='white', size=14)
     node_trace.textposition = 'middle center'
+
+    # Ensure text is white and increase font size
+    node_trace.textfont = dict(color='white', size=14)
 
     fig = go.Figure(data=[edge_trace, node_trace],
                     layout=go.Layout(
@@ -169,18 +169,6 @@ def visualize_graph(G):
     return fig
 
 def main():
-    st.set_page_config(page_title="Google VS Explorer", layout="wide", initial_sidebar_state="collapsed")
-    
-    # Force dark mode using CSS
-    st.markdown("""
-        <style>
-        .stApp {
-            background-color: #0E1117;
-            color: white;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
     st.title("Google VS Explorer")
     
     st.markdown("""
@@ -212,9 +200,6 @@ def main():
                         st.error("Please try again with a different concept.")
             else:
                 st.warning("Please enter a concept to explore.")
-
-if __name__ == "__main__":
-    main()
 
 if __name__ == "__main__":
     main()
