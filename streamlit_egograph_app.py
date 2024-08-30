@@ -109,13 +109,19 @@ def visualize_graph(G):
         
         edge_color = f'rgba(100, 100, 100, {normalized_weight})'
         
+        # Create a detailed tooltip for the edge
+        tooltip = (f"Connection: {edge[0]} vs {edge[1]}<br>"
+                   f"Weight: {weight:.2f}<br>"
+                   f"Normalized Weight: {normalized_weight:.2f}")
+        
         edge_trace = go.Scatter(
             x=[x0, x1, None],
             y=[y0, y1, None],
             line=dict(width=2, color=edge_color),
             hoverinfo='text',
             mode='lines',
-            text=f"Weight: {weight}",
+            text=tooltip,
+            name='',  # This ensures the trace name doesn't appear in the tooltip
         )
         edge_traces.append(edge_trace)
 
@@ -183,6 +189,11 @@ def visualize_graph(G):
     fig.update_layout(
         height=800,
         width=1000,
+        hoverlabel=dict(
+            bgcolor="white",
+            font_size=12,
+            font_family="Rockwell"
+        )
     )
 
     return fig
