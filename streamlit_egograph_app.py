@@ -138,8 +138,9 @@ def visualize_graph(G):
     node_trace.text = list(G.nodes())
     node_trace.textposition = 'top center'
 
-    # Determine text color based on Streamlit theme
-    text_color = 'white' if st.get_option('theme.base') == 'light' else 'black'
+    # Ensure text is white and move it closer to the nodes
+    node_trace.textfont = dict(color='white', size=14)
+    node_trace.textposition = 'middle center'
 
     fig = go.Figure(data=[edge_trace, node_trace],
                     layout=go.Layout(
@@ -157,21 +158,20 @@ def visualize_graph(G):
                         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
                     )
     
-    # Set consistent text color and increase font size
-    fig.update_traces(textfont=dict(color=text_color, size=14),
-                      textfont_family="Arial",
-                      selector=dict(type='scatter', mode='markers+text'))
-    
     fig.update_layout(
         height=700,
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
+        # Force dark mode
+        template='plotly_dark',
     )
 
     return fig
 
+# Modify the main function to force dark mode in Streamlit
 def main():
-    st.set_page_config(page_title="Google VS Explorer", layout="wide")
+    # Force dark mode
+    st.set_page_config(page_title="Google VS Explorer", layout="wide", initial_sidebar_state="collapsed", theme="dark")
     
     st.title("Google VS Explorer")
     
