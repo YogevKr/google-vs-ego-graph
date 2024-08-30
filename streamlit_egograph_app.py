@@ -99,12 +99,8 @@ st.button("Toggle Theme", on_click=theme_toggle)
 
 def visualize_graph(G):
     # Use the session state to determine the theme
-    is_dark_theme = st.session_state.dark_theme
-    st.write(f"Is dark theme: {is_dark_theme}")
-    
+    is_dark_theme = st.session_state.dark_theme    
     text_color = 'white' if is_dark_theme else 'black'
-    st.write(f"Chosen text color: {text_color}")
-
     pos = nx.spring_layout(G, k=0.5, iterations=50)
 
     edge_x = []
