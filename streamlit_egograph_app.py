@@ -96,8 +96,7 @@ def visualize_graph(G):
     bg_color, _ = get_streamlit_theme_colors()
     plot_text_color = 'black'
     
-    # Increase the k parameter to create more space between nodes
-    pos = nx.spring_layout(G, k=1.0, iterations=50)  # Increased from 0.5 to 1.0
+    pos = nx.spring_layout(G, k=1.0, iterations=50)
 
     edge_traces = []
     edge_weights = [G.edges[edge]['weight'] for edge in G.edges()]
@@ -109,7 +108,6 @@ def visualize_graph(G):
         x1, y1 = pos[edge[1]]
         weight = edge[2]['weight']
         
-        # Adjust the opacity range to be between 0.3 and 1
         normalized_weight = 0.3 + 0.7 * (weight - min_weight) / (max_weight - min_weight)
         
         color = f'rgba(100, 100, 100, {normalized_weight})'
@@ -157,13 +155,14 @@ def visualize_graph(G):
     node_trace.marker.size = node_sizes
     node_trace.text = node_texts
 
+    # Adjust the text position to be closer to the nodes
     text_trace = go.Scatter(
         x=[pos[node][0] for node in G.nodes()],
-        y=[pos[node][1] + 0.1 for node in G.nodes()],
+        y=[pos[node][1] + 0.05 for node in G.nodes()],  # Reduced y-offset from 0.1 to 0.05
         mode='text',
         text=list(G.nodes()),
         textposition='top center',
-        textfont=dict(color=plot_text_color, size=14),
+        textfont=dict(color=plot_text_color, size=12),  # Reduced font size from 14 to 12
         hoverinfo='none'
     )
 
@@ -186,10 +185,9 @@ def visualize_graph(G):
                         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                         dragmode='pan'))
 
-    # Increase the plot size to accommodate the larger layout
     fig.update_layout(
-        height=800,  # Increased from 700 to 800
-        width=1000,  # Added width parameter
+        height=800,
+        width=1000,
         plot_bgcolor=bg_color,
         paper_bgcolor=bg_color,
         font_color=plot_text_color,
