@@ -111,7 +111,7 @@ def visualize_graph(G):
         edge_trace = go.Scatter(
             x=[x0, x1, None],
             y=[y0, y1, None],
-            line=dict(width=normalized_weight, color='rgba(100, 100, 100, 0.7)'),  # Fixed opacity, variable width
+            line=dict(width=normalized_weight, color='rgba(200, 200, 200, 0.7)'),  # Fixed opacity, variable width
             hoverinfo='text',
             mode='lines',
             text=f"Weight: {weight}",
