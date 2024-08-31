@@ -111,8 +111,13 @@ def visualize_graph(G):
 
     edge_traces = []
     edge_weights = [G.edges[edge]['weight'] for edge in G.edges()]
-    min_weight = min(edge_weights)
-    max_weight = max(edge_weights)
+    
+    # Handle case where there are no edges
+    if edge_weights:
+        min_weight = min(edge_weights)
+        max_weight = max(edge_weights)
+    else:
+        min_weight = max_weight = 1  # Default values if no edges
 
     for edge in G.edges(data=True):
         x0, y0 = pos[edge[0]]
@@ -120,12 +125,15 @@ def visualize_graph(G):
         weight = edge[2]['weight']
 
         # Normalize the weight to determine line thickness
-        normalized_weight = 1 + 9 * (weight - min_weight) / (max_weight - min_weight)  # Scale from 1 to 10
+        if min_weight != max_weight:
+            normalized_weight = 1 + 9 * (weight - min_weight) / (max_weight - min_weight)
+        else:
+            normalized_weight = 1  # Default to 1 if all weights are the same
 
         edge_trace = go.Scatter(
             x=[x0, x1, None],
             y=[y0, y1, None],
-            line=dict(width=normalized_weight, color='rgba(200, 200, 200, 0.7)'),  # Fixed opacity, variable width
+            line=dict(width=normalized_weight, color='rgba(200, 200, 200, 0.7)'),
             hoverinfo='text',
             mode='lines',
             text=f"Weight: {weight}",
@@ -232,14 +240,16 @@ def main():
                 with st.spinner("Generating concept map..."):
                     try:
                         G = create_egograph(search_term)
-                        fig = visualize_graph(G)
-                        st.plotly_chart(fig, use_container_width=True)
-                        st.success(f"Map generated with {len(G.nodes())} concepts and {len(G.edges())} connections.")
+                        if len(G.nodes()) > 0:
+                            fig = visualize_graph(G)
+                            st.plotly_chart(fig, use_container_width=True)
+                            st.success(f"Map generated with {len(G.nodes())} concepts and {len(G.edges())} connections.")
+                        else:
+                            st.warning("No related concepts found. Try a different search term.")
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
                         st.error("Please try again with a different concept.")
             else:
                 st.warning("Please enter a concept to explore.")
-
 if __name__ == "__main__":
     main()
