@@ -46,6 +46,10 @@ def clean_suggestions(suggestions, original_term, previous_terms):
                     all(prev_term not in term for prev_term in previous_terms)):
                     cleaned.append(term)
 
+    # If no suggestions were found, return a list with a default suggestion
+    if not cleaned:
+        return ["no results found"]
+
     return cleaned[:5]
 
 @st.cache_data
