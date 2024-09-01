@@ -218,18 +218,25 @@ def main():
     [The Google 'vs' Trick](https://medium.com/applied-data-science/the-google-vs-trick-618c8fd5359f).
     """)
     
+    # Initialize session state for search term if it doesn't exist
+    if 'search_term' not in st.session_state:
+        st.session_state.search_term = "vscode"
+
     col1, col2 = st.columns([3, 1])
     
     with col2:
         st.subheader("Start Exploring")
-        search_term = st.text_input("Enter a concept:", key="text_input", on_change=submit_text)
+        search_term = st.text_input("Enter a concept:", 
+                                    value=st.session_state.search_term, 
+                                    key="text_input", 
+                                    on_change=submit_text)
         generate_button = st.button("Explore Related Concepts")
         
         # Add a placeholder for warnings
         warning_placeholder = st.empty()
         
     # Handle either Enter key submission or button click
-    if generate_button and not st.session_state.get('submitted_text'):
+    if generate_button or ('submitted_text' not in st.session_state):
         st.session_state['submitted_text'] = search_term
 
     with col1:
@@ -251,6 +258,9 @@ def main():
                         st.error("Please try again with a different concept.")
             else:
                 warning_placeholder.warning("Please enter a concept to explore.")
+
+    # Update session state with the current search term
+    st.session_state.search_term = search_term
 
 if __name__ == "__main__":
     main()
