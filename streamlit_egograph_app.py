@@ -229,6 +229,9 @@ def main():
         search_term = st.text_input("Enter a concept:", key="text_input", on_change=submit_text)
         generate_button = st.button("Explore Related Concepts")
         
+        # Add a placeholder for warnings
+        warning_placeholder = st.empty()
+        
     # Handle either Enter key submission or button click
     if generate_button and not st.session_state.get('submitted_text'):
         st.session_state['submitted_text'] = search_term
@@ -240,16 +243,18 @@ def main():
                 with st.spinner("Generating concept map..."):
                     try:
                         G = create_egograph(search_term)
-                        if len(G.nodes()) > 0:
+                        if len(G.nodes()) > 1:  # Check if there's more than just the root node
                             fig = visualize_graph(G)
                             st.plotly_chart(fig, use_container_width=True)
                             st.success(f"Map generated with {len(G.nodes())} concepts and {len(G.edges())} connections.")
                         else:
-                            st.warning("No related concepts found. Try a different search term.")
+                            # Display warning next to the button
+                            warning_placeholder.warning("No related concepts found. Please try a different search term.")
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
                         st.error("Please try again with a different concept.")
             else:
-                st.warning("Please enter a concept to explore.")
+                warning_placeholder.warning("Please enter a concept to explore.")
+
 if __name__ == "__main__":
     main()
