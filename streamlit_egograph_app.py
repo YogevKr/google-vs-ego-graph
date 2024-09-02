@@ -49,7 +49,8 @@ def clean_suggestions(suggestions, original_term, previous_terms):
     return cleaned[:5]  # Return up to 5 cleaned suggestions, or an empty list if none found
 
 @st.cache_data
-def create_egograph(query, target_nodes=100, max_depth=6):
+def create_egograph(query, target_nodes=60, max_depth=6):
+
     G = nx.Graph()
     G.add_node(query, size=40, color='#FFA500', level=0)  # Orange for root node
 
